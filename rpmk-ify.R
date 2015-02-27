@@ -1,3 +1,7 @@
+### Code intdended to create RPKM values from a  matrix of read counts for either host or pathogen.
+
+##
+
 data<-file.choose()
 
 counts
