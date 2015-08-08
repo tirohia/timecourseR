@@ -4,8 +4,8 @@ library("Biobase")
 library("gplots")
 library(RColorBrewer)
 
-subject<-"plant"  #should be plant or psa
-track<-"control"  #should be psa or control, i.e. treatment
+subject<-"bacteria"  #should be plant or bacteria
+track<-"psa"  #should be psa or control, i.e. treatment
 
 outputDir<-"/home/ben/Google Drive/PhD/writing/Timecourse/images/"
 
@@ -21,14 +21,14 @@ if (subject=="plant"){
 }
 
 
-## load data into rawCounts
+## load data into counts
 counts = read.table( datafile,sep=",", header=TRUE, row.names=1,stringsAsFactors = FALSE )
 counts <-cleanDataNames(counts)
 design <- getDataRange(counts,1.5,120,track)
 datacolumns<-getDataCols(design)
 counts<-counts[,datacolumns]
 
-if (track=="psa"){
+if (subject=="psa"){
 ## remove ribosomal entries from psa data. 
   ribosomalEntriesfile="/home/ben/workspace/models/psa/ribosomalIYO"
   ribosomalEntries = read.table( ribosomalEntriesfile,sep=",", header=FALSE,stringsAsFactors = FALSE )
@@ -90,9 +90,7 @@ for (i in c(1:9) ){
     if (is.integer(nrow(topUp))){
         geneMap[paste("time",i,sep=""),paste("time",j,sep="")]<-nrow(topUp)
     }
-    if (is.integer(nrow(topDown))){
-        geneMap[paste("time",i,sep=""),paste("time",j,sep="")]<-nrow(topDown)
-    }
+    
   }
 }
 
@@ -126,8 +124,8 @@ if(subject=="plant" && track=="control"){
 colnames(geneMap)<-c(1.5,3,6,12,24,48,72,96,120)
 rownames(geneMap)<-c(1.5,3,6,12,24,48,72,96,120)
 
-matUp<-geneMapUp
-matUp[upper.tri(geneMapUp)]<-0
+matUp<-geneMap
+matUp[upper.tri(geneMap)]<-0
 png(filename=filenameUp,width=800)
 heatmap.2( log(matUp+1),scale="none",col = palette,margins = c(5, 15),trace = "none",lhei = c(0.75,3),xlab = "Comparison", na.color="white", main = mainUp ,Colv = FALSE,Rowv =FALSE, dendrogram = "none")
 dev.off()
@@ -136,7 +134,7 @@ dev.off()
 #heatmap.2( log(matUp+1),scale="none",col = palette,margins = c(5, 15),trace = "none",lhei = c(0.75,3),xlab = "Comparison", na.color="white", main = mainUp ,Colv = FALSE,Rowv =FALSE, dendrogram = "none")
 
 matDown<-geneMap
-matDown[lower.tri(geneMapUp)]<-0
+matDown[lower.tri(geneMap)]<-0
 png(filename=filenameDown,width=800)
 heatmap.2( log(matDown+1),scale="none",col = palette,margins = c(5, 15),trace = "none",lhei = c(0.75,3),xlab = "Comparison", na.color="white", main = mainDown,Colv = FALSE,Rowv =FALSE, dendrogram = "none")
 dev.off()
