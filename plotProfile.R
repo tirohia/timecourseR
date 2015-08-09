@@ -1,4 +1,5 @@
-
+## this is identical to the plotProfile function from Timecourse with the addition of a line to 
+## write the results to a file. 
 
 plotProfile <- function (object, stats = c("HotellingT2", "MB"), ranking = 1, 
           gid = NULL, gnames = NULL, desc = NULL, type = c("p", "l", 
@@ -24,7 +25,7 @@ plotProfile <- function (object, stats = c("HotellingT2", "MB"), ranking = 1,
     val <- object$HotellingT2[pos]
     gid <- gnames[pos]
     #### Write//append to file here?
-    write(c(gid,val),file="../data/rankedTimecourseGenes.txt",append=TRUE)
+    write(c(gid,val),file="../data/deResults/timecourse/rankedTimecourseGenes.txt",append=TRUE)
   }
   if (stats == "MB" & !is.null(ranking)) {
     pos <- object$pos.MB[ranking]
