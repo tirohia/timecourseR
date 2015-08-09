@@ -23,7 +23,7 @@ cleanDataNames <- function(counts){
 getDataRange<-function(rawData,time1,time2,condition=NULL){
   intable <- timeTable[timeTable$time >=time1,]
   fintable<- intable[intable$time<= time2,]
-  #print(fintable[fintable$condtion=="psa",])
+  #print(fintable[fintable$condtion==condition,])
   
   if (is.null(condition)){
     return(fintable)
@@ -32,6 +32,7 @@ getDataRange<-function(rawData,time1,time2,condition=NULL){
     return(fintable[fintable$condition=="psa",])
   }
   else if (condition=="control"){
+    
     return(fintable[fintable$condition=="control",])
   }
 }
