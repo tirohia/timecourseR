@@ -5,6 +5,44 @@ setwd("/home/ben/workspace/timeCourse/data")
 
 timeTable = read.table( "lookupsheet.csv",sep=",", header=TRUE, stringsAsFactors = FALSE )
 
+load.data<-function(subject,track,time1,time2){
+  if (subject=="plant"){
+    datafile="/home/ben/workspace/timeCourse/data/actinidia/cornellGenomeModelTH-TCFrequencyMatrix.csv"
+    
+  }else if (subject=="bacteria"){
+    datafile="/home/ben/workspace/timeCourse/data/psa/psaFrequencyMatrix.csv"
+  }else {
+    stop ("please specify subject <- plant or bacteria" )
+  }
+  
+  ## load data into counts
+  counts = read.table( datafile,sep=",", header=TRUE, row.names=1,stringsAsFactors = FALSE )
+  
+  counts <-cleanDataNames(counts)
+  if (track=="all"){
+    design <- getDataRange(time1,time2)
+  }else{
+    design <- getDataRange(time1,time2,track)
+  }
+  datacolumns<-getDataCols(design)
+  counts<-counts[,datacolumns]
+  
+  if (subject=="bacteria"){
+    ## remove ribosomal entries from psa data. 
+    ribosomalEntriesfile="/home/ben/workspace/models/psa/ribosomalIYO"
+    ribosomalEntries = read.table( ribosomalEntriesfile,sep=",", header=FALSE,stringsAsFactors = FALSE )
+    counts<-counts[ ! rownames(counts) %in% ribosomalEntries, ] 
+    counts <- head(counts, -5)
+    
+    ribo<-read.csv("/home/ben/workspace/timeCourse/data/psa/NZv-13invitroRNA-seq.csv")
+    riboNames<-counts[grep("ribosom", ribo[,8]), ]
+    riboNames<- rownames(riboNames)
+    counts<-counts[ ! rownames(counts) %in% riboNames, ] 
+    
+    #tail(counts)
+  }
+  return(counts)
+}
 
 cleanDataNames <- function(counts){
   #sometimes the csv has an empty column on for some reason. Get rid of it. 
@@ -20,7 +58,7 @@ cleanDataNames <- function(counts){
 
 
 
-getDataRange<-function(rawData,time1,time2,condition=NULL){
+getDataRange<-function(time1,time2,condition=NULL){
   intable <- timeTable[timeTable$time >=time1,]
   fintable<- intable[intable$time<= time2,]
   #print(fintable[fintable$condtion==condition,])
