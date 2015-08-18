@@ -1,33 +1,22 @@
+source("http://bioconductor.org/biocLite.R")
+setwd("/home/ben/workspace/timeCourse/data")
 library("TDARACNE")
 
-datafile<-file.choose()
-networkCounts = read.table( datafile,sep=",", header=TRUE,row.names=1 , stringsAsFactors = FALSE )
-networkCounts<-cleanDataNames(networkCounts)
-design <- getDataRange(rawCounts,24,120)
-datacols<-getDataCols(design)
-networkCounts<-networkCounts[,datacols]  
+subject<-"plant"  #should be plant or bacteria
+track<-"control"  #should be psa or control, i.e. treatment
 
-#phenotype data for annotated data frame. 
-pDataFile <- file.path("pdata.csv")
-pData <- read.csv(pDataFile,header=TRUE, sep=",")
-phenoData <- new("AnnotatedDataFrame",data=pData, varMetadata=metadata)
+### raw data. 
+counts<-load.data(subject,track,0,120)
+##normalized data
+counts<-assay(rld)
+design<-getDataRange(0,120,track)
 
-#annotated data frame. 
-colnames(networkCounts)<-rownames(pData)
-all(rownames(pData) == colnames(networkCounts))
-metadata <- data.frame(labelDescription=c("Condition", "Assay","Time"))
+## the genes of interest. 
+datafile<-"/home/ben/workspace/timeCourse/data/deResults/networkGenesMedians.csv"
+networkGenes <- read.csv(datafile,row.names=1)
+counts<-counts[rownames(networkGenes),]
 
-phenoData <- new("AnnotatedDataFrame", data = pData, varMetadata = metadata)
-
-## Experiment data - complete bollocks atm
-experimentData <- new("MIAME",name="Pierre Fermat", lab="Francis Galton Lab", contact="pfermat@lab.not.exist")
-
-#Matrix
-NM3M<-as.matrix(networkCounts)
-NM3M<- NM3M+1
-colnames(M3)<-rownames(pData)
 
 ##Expression set
-exampleSet <- ExpressionSet(assayData=NM3M, phenoData=phenoData,experimentData=experimentData,annotation="hgu95av2")
-aracneGraph<-TDARACNE(exampleSet,11,"netIRMAon",delta=3,likehood=1.2,norm=2,logarithm=1,thresh=0,ksd=0,0.15);
-
+eset<-createESet(counts,design)
+aracneGraph<-TDARACNE(eset,11,"netIRMAon",delta=3,likehood=1.2,norm=2,logarithm=1,thresh=0,ksd=0,0.15);
