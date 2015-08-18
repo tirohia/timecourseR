@@ -1,11 +1,25 @@
 ## this is identical to the plotProfile function from Timecourse with the addition of a line to 
 ## write the results to a file. 
 
-plotProfile <- function (object, stats = c("HotellingT2", "MB"), ranking = 1, 
-          gid = NULL, gnames = NULL, desc = NULL, type = c("p", "l", 
-                                                           "b"), col = 2:100, lty = 1:100, pch = 1:100, lwd = 2, 
-          xlab = "Time", ylab = "Expression", legloc = NULL, xlim = NULL, 
-          ylim = NULL, cex.main = 1, ...) 
+plotProfile <- function (object, 
+                         stats = c("HotellingT2", "MB"), 
+                         ranking = 1, 
+                         gid = NULL, 
+                         gnames = NULL, 
+                         desc = NULL, 
+                         type = c("p", "l", "b"), 
+                         col = 2:100, 
+                         lty = 1:100, 
+                         pch = 1:100, 
+                         lwd = 2,
+                         xlab = "Time",
+                         ylab = "Expression", 
+                         legloc = NULL, 
+                         xlim = NULL,
+                         ylim = NULL, 
+                         cex.main = 1, 
+                         outputList=NULL
+                         ) 
 {
   if (!is.null(object$geneNames)) 
     gnames <- object$geneNames
@@ -25,7 +39,9 @@ plotProfile <- function (object, stats = c("HotellingT2", "MB"), ranking = 1,
     val <- object$HotellingT2[pos]
     gid <- gnames[pos]
     #### Write//append to file here?
-    write(c(gid,val),file="../data/deResults/timecourse/rankedTimecourseGenes.txt",append=TRUE)
+    #print(gid)
+    print(outputList)
+    write.table(gid,file=outputList,sep=",",row.names=FALSE, col.names = FALSE, append=TRUE)
   }
   if (stats == "MB" & !is.null(ranking)) {
     pos <- object$pos.MB[ranking]
@@ -62,7 +78,7 @@ plotProfile <- function (object, stats = c("HotellingT2", "MB"), ranking = 1,
   yllim <- min(y, na.rm = TRUE) - 0.4 * (max(y, na.rm = TRUE) - 
                                            min(y, na.rm = TRUE))
   ?max
-  print(max(unique(object$time.group),na.rm=TRUE))
+  #print(max(unique(object$time.group),na.rm=TRUE))
   xulim <- max(unique(object$time.group), na.rm = TRUE) + 1
   xllim <- min(unique(object$time.group), na.rm = TRUE) - 1
   if (is.null(ylim)) 
