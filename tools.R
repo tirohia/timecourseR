@@ -58,12 +58,12 @@ cleanDataNames <- function(counts){
 
 
 
-getDataRange<-function(time1,time2,condition=NULL){
+getDataRange<-function(time1,time2,condition="all"){
   intable <- timeTable[timeTable$time >=time1,]
   fintable<- intable[intable$time<= time2,]
   #print(fintable[fintable$condtion==condition,])
   
-  if (is.null(condition)){
+  if (condition=="all" || is.null(condition)){
     return(fintable)
   }
   else if (condition=="psa"){
@@ -101,10 +101,18 @@ getRawData <- function (rawdata, time1, time2,condition=NULL){
   rawdata <- rawdata[,c(set1,set2)] 
 }
 
-getMedians <- function (rawData,time1,time2,condition="psa"){
+getMedians <- function (rawData,time1,time2,condition=NULL){
+  ## lookup columns for given samples. 
   timeTable = read.table( "lookupsheet.csv",sep=",", header=TRUE, stringsAsFactors = FALSE )
+  
+  #empty data frame, setting only rownames
   mediansDF<-data.frame(gene=rownames(rawData))
-  design<-timeTable[timeTable$time >= time1 & timeTable$time <= time2 & timeTable$condition ==condition,]
+  if (!is.null(condition)){
+    design<-timeTable[timeTable$time >= time1 & timeTable$time <= time2 & timeTable$condition ==condition,]
+  }
+  else{
+    design<-timeTable[timeTable$time >= time1 & timeTable$time <= time2,]
+  }
   for(j in unique(design$time)){
     columns <-  design[design$time==j,3:5]
     data<-rawData[,unlist(columns)]
@@ -179,6 +187,19 @@ deExp <- function(counts,design,direction=NULL, banded=FALSE,outputName=FALSE){
     res
     #log(nrow(res))
   }
+}
+
+
+createESet<-function(counts,design){
+  ## creates an expression set object. 
+  ## errors regarding rownames etc are likely due to counts not being derived from the correct design object. 
+  exprs <- as.matrix(counts)    
+  metadata<-data.frame(lableDescription=c("Innoculation vs Control","timepoint"),row.names=(c("condition","time")))
+  design<-data.frame(condition=rep(design$condition,each=3), time=rep(design$time,each=3))
+  rownames(design)<-as.character(colnames(counts))
+  phenoData <- new("AnnotatedDataFrame", data=design, varMetadata=metadata)
+  experimentData <- new("MIAME", name="Ben Curran", lab="PFR",contact="ben.curran@auckland.ac.nz", title="Kiwifruit-psa host-pathogen timecourse", abstract="ExpressionSet for dimensionality reduction", url="www.sbs.acukland.ac.nz",other=list(notes="Created from text files"))
+  eSet <- ExpressionSet(assayData=exprs, phenoData=phenoData, experimentData=experimentData) 
 }
 
 
