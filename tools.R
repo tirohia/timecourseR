@@ -17,7 +17,6 @@ load.data<-function(subject,track,time1,time2){
   
   ## load data into counts
   counts = read.table( datafile,sep=",", header=TRUE, row.names=1,stringsAsFactors = FALSE )
-  
   counts <-cleanDataNames(counts)
   if (track=="all"){
     design <- getDataRange(time1,time2)
@@ -93,6 +92,7 @@ getRawData <- function (rawdata, time1, time2,condition=NULL){
   #should be error checking in here to check that counts is the full 1-57 data frame. 
   #set1<-c(timeTable[timeTable$time == time1 && timeTable$condition == condition, ]$X1,timeTable[timeTable$time == time1 && timeTable$condition == condition, ]$X2,timeTable[timeTable$time == time1 && timeTable$condition == condition, ]$X3)
   #set2<-c(timeTable[timeTable$time == time2, ]$X1,timeTable[timeTable$time == time2, ]$X2,timeTable[timeTable$time == time2, ]$X3)
+  print(head(rawdata))
   timeTable1<-timeTable[timeTable$condition == condition,]
   tableCols<-timeTable1[timeTable1$time == time1, ]
   set1<-unlist(tableCols[,3:5])
@@ -101,29 +101,49 @@ getRawData <- function (rawdata, time1, time2,condition=NULL){
   rawdata <- rawdata[,c(set1,set2)] 
 }
 
-getMedians <- function (rawData,time1,time2,condition=NULL){
-  ## lookup columns for given samples. 
-  timeTable = read.table( "lookupsheet.csv",sep=",", header=TRUE, stringsAsFactors = FALSE )
+gm_mean = function(x, thing, n,na.rm=TRUE){
+  list<-lapply(split(x, ceiling(seq_along(x)/n)), function(x) exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))) 
+  unlist(list)
+  
+  #exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+  #  c("thing","thingngn","salnfhd")
+}
+
+getMedians <- function (data,time1,time2,condition=NULL){
+  ## returns geometric means
+  n<-3
+  t(apply(data, 1, function(x) gm_mean(x,seq(1, ncol(m), n), n)))
+  
+  #assumes log transformed data is being passed in. Means I have to take the geometirc rather than the arithmetic mean. 
+  
+  #timeTable = read.table( "lookupsheet.csv",sep=",", header=TRUE, stringsAsFactors = FALSE )
   
   #empty data frame, setting only rownames
-  mediansDF<-data.frame(gene=rownames(rawData))
-  if (!is.null(condition)){
-    design<-timeTable[timeTable$time >= time1 & timeTable$time <= time2 & timeTable$condition ==condition,]
-  }
-  else{
-    design<-timeTable[timeTable$time >= time1 & timeTable$time <= time2,]
-  }
-  for(j in unique(design$time)){
-    columns <-  design[design$time==j,3:5]
-    data<-rawData[,unlist(columns)]
-    M3<-as.matrix(data)
-    medians<-rowMedians(M3)
-    #mediansDF[,paste(condition,j,sep="")]<-as.vector(medians)
-    mediansDF[,paste(j,sep="")]<-as.vector(medians)
-  }
-  mediansDF$gene<-NULL
-  rownames(mediansDF)<-rownames(rawData)
-  return(mediansDF)
+  #mediansDF<-data.frame(gene=rownames(rawData))
+  #
+  #unique(design$time)
+  #thing<-apply(rawData, 1, function(x) tapply(x, rep(seq(1, length(x), n), each=n), mean))
+  
+  #gm_mean(rawData[1,1:3])
+  
+  #if (!is.null(condition)){
+  #  design<-timeTable[timeTable$time >= time1 & timeTable$time <= time2 & timeTable$condition ==condition,]
+  #}
+  #else{
+  #  design<-timeTable[timeTable$time >= time1 & timeTable$time <= time2,]
+  #}
+  #for(j in unique(design$time)){
+  #  columns <-  design[design$time==j,3:5]
+  #  print(columns)
+  #  data<-rawData[,unlist(columns)]
+  #  M3<-as.matrix(data)
+  #  medians<-rowMedians(M3)
+  #  #mediansDF[,paste(condition,j,sep="")]<-as.vector(medians)
+  #  mediansDF[,paste(j,sep="")]<-as.vector(medians)
+  #}
+  #mediansDF$gene<-NULL
+  #rownames(mediansDF)<-rownames(rawData)
+  #return(mediansDF)
 }
 
 
@@ -162,7 +182,7 @@ deExp <- function(counts,design,direction=NULL, banded=FALSE,outputName=FALSE){
     if (banded==FALSE){
       if (direction=="up"){res = res[ res$log2FoldChange > 2, ]}
       else if(direction=="down"){res = res[ res$log2FoldChange < -2, ]}
-      res=res[res$padj < 0.1,]
+      res=res[res$padj < 0.05,]
     #write.csv(res,paste("deResults/psa",direction,design[1,"time"],"-",design[4,"time"],".csv",sep="")) #actInoculatedUp
       if(nrow(res)==0){
         return(0)
@@ -193,9 +213,13 @@ deExp <- function(counts,design,direction=NULL, banded=FALSE,outputName=FALSE){
 createESet<-function(counts,design){
   ## creates an expression set object. 
   ## errors regarding rownames etc are likely due to counts not being derived from the correct design object. 
+  ## inputs? Counts is obvious. Log transformed, hetero wotsit stabilsed, geometric medians.  via assay(rld). 
+  ## design? ah. counts shouldn't be medians. Should be replicates. 
   exprs <- as.matrix(counts)    
   metadata<-data.frame(lableDescription=c("Innoculation vs Control","timepoint"),row.names=(c("condition","time")))
+  print(design)
   design<-data.frame(condition=rep(design$condition,each=3), time=rep(design$time,each=3))
+  print(design)
   rownames(design)<-as.character(colnames(counts))
   phenoData <- new("AnnotatedDataFrame", data=design, varMetadata=metadata)
   experimentData <- new("MIAME", name="Ben Curran", lab="PFR",contact="ben.curran@auckland.ac.nz", title="Kiwifruit-psa host-pathogen timecourse", abstract="ExpressionSet for dimensionality reduction", url="www.sbs.acukland.ac.nz",other=list(notes="Created from text files"))
@@ -203,3 +227,38 @@ createESet<-function(counts,design){
 }
 
 
+geneDetails<-function(subject,list,keyword=NULL,printToFile=FALSE){
+  ## reads the annotation file and extracts genes in the list. 
+  ## if keyword is specified, finds all those genes with that keyword (i.e. "transcription factor") in the annotation. 
+  if(subject=="plant"){
+    deets<-read.csv("/home/ben/workspace/models/cornell/Kiwifruit_gene_annotation_AHRD.csv")
+  }
+  else if (subject=="bacteria"){
+    deets<-read.csv("/home/ben/workspace/models/psa/Nz13v-duplicatesRemoved.csv")
+    deets<-deets[,2:4]
+   
+  }
+  listDetails<-deets[deets[,1] %in% list,]
+  if(!is.null(keyword)){
+    keywordLocations<-grep(keyword, listDetails[,2], ignore.case = TRUE, perl = TRUE)
+    listDetails<-listDetails[keywordLocations,1:2]
+    if(printToFile==TRUE){
+      write.csv(listDetails,paste("deResults/geneDetails-",length(all),"-",keyword,".csv"))
+    }
+  }
+  else{
+    print(listDetails)
+    if(printToFile==TRUE){
+      write.csv(listDetails,paste("deResults/geneDetails-",length(all),".csv"),row.names=TRUE)
+    }
+  }
+  colnames(listDetails)<-c("gene","annotation")
+  listDetails[,1:2]
+  
+}
+
+removeIsolates<-function(graph){
+  isolates <- which(igraph::degree(graph) == 0)
+  graph<-delete.vertices(graph, isolates)
+  graph
+}
