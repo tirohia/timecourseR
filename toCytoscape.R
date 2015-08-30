@@ -1,3 +1,7 @@
+library(RJSONIO)
+library(igraph)
+library(httr)
+
 toCytoscape <- function (igraphobj) {
   
   # Extract graph attributes
@@ -89,4 +93,5 @@ send2cy <- function(cygraph, style.name, layout.name) {
   
   res <- GET(apply.layout.url)
   res <- GET(apply.style.url)
+  
 }
